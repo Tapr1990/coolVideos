@@ -15,7 +15,7 @@ mongoose
 
 app.set("view engine", "ejs");
 
-/* middleware de parsamento de HTTP body */
+
 app.use( express.json() );
 
 app.get("/", async (req, res) => {
