@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VideosFixes - O site mais cool da Internet</title>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const VideoForm = document.getElementById("VideoForm");
+            const LoginForm = document.getElementById("LoginForm");
+
+            if(localStorage.getItem("AuthToken")) {
+                VideoForm.classList.remove("hide");
+            }
+            else {
+                LoginForm.classList.remove("hide");
+            }
+
+            VideoForm.addEventListener("submit", event => {
+                event.preventDefault();
+
+                if( !localStorage.getItem("AuthToken")) {
+                    alert("Autenticação em falta");
+                    return false;
+                }
+
+                const data = {
+                    "title": VideoForm.title.value,
+                    "youtube_id": VideoForm.youtube_id.value
+                }
+
+                fetch("/api/videos", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type":"application/json",
+                        "Authorization":"Bearer " + localStorage["AuthToken"]
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(response => response.json())
+                .then(result => {
+                    if(result._id) {
+                        window.location.reload();
+                    }
+                });
+            });
+
+            LoginForm.addEventListener("submit", event => {
+                event.preventDefault();
+
+                const data = {
+                    "email":LoginForm.email.value,
+                    "password":LoginForm.password.value
+                }
+
+                fetch("/api/login", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type":"application/json"
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(response => response.json())
+                .then(result => {
+                    if(result.token) {
+                        localStorage["AuthToken"] = result.token;
+
+                        window.location.reload();
+                    }
+                });
+            });
+        });
+    </script>
+    <style>
+        .hide { display: none; }
+    </style>
+</head>
+<body>
+    <h1>Videos Fixes</h1>
+    <main>
+        <div>
+            <form id="VideoForm" method="post" action="/api/videos" class="hide">
+                <fieldset>
+                    <legend>Partilhar Novo Video</legend>
+                    <label>
+                        Título
+                        <input type="text" name="title" required maxlength="180">
+                    </label>
+                    <label>
+                        ID Youtube
+                        <input type="text" name="youtube_id" required minlength="11" maxlength="11">
+                    </label>
+                    <button type="submit">OK</button>
+                </fieldset>
+            </form>
+            <form id="LoginForm" method="post" action="/api/login" class="hide">
+                <fieldset>
+                    <legend>Faça Login</legend>
+                    <label>
+                        Email
+                        <input type="email" name="email" required>
+                    </label>
+                    <label>
+                        Password
+                        <input type="password" name="password" required minlength="8" maxlength="1000">
+                    </label>
+                    <button type="submit">OK</button>
+                </fieldset>
+            </form>
+        </div>
+        <% videos.forEach(video => { %>
+        <article>
+            <h2><%= video.title %></h2>
+            <div>
+                <iframe width="560" height="315" src="https://www.youtube.com/embed/<%= video.youtube_id %>" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+            </div>
+            <dl>
+                <dt>Quem partilhou</dt>
+                <dd><%= (video.user_id ? video.user_id.username : "") %></dd>
+                <dt>Data</dt>
+                <dd><%= video.created_at %></dd>
+            </dl>
+        </article>
+        <% }) %>
+    </main>
+</body>
+</html>
